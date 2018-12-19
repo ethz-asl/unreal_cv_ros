@@ -5,7 +5,7 @@
   <arg name="verbose_gazebo" default="false"/>
 
   <!-- Voxblox arguments -->
-  <arg name="voxel_size" default="0.1"/>
+  <arg name="voxel_size" default="0.05"/>
   <arg name="voxels_per_side" default="16"/>
   <arg name="method" default="fast"/>
   <arg name="verbose_voxblox" default="false"/>
@@ -13,10 +13,11 @@
   <!-- Unreal/Routine arguments -->
   <arg name="sensor_model_config" default="sensor_model_config.yaml"/>
   <arg name="uecv_mode" default="fast"/>
+  <arg name="slowdown" default="0.2"/>
   <arg name="rviz_config_voxblox" default="example_full.rviz"/>
   
   <!-- Random Planner -->
-  <arg name="verbose_planner" default="true"/>
+  <arg name="verbose_planner" default="false"/>
   
 
   <!-- Setup empty gazebo world for physics-->
@@ -63,6 +64,7 @@
     <node name="unreal_ros_client" pkg="unreal_cv_ros" type="unreal_ros_client.py" output="screen">
 			<param name="mode" value="$(arg uecv_mode)"/>
 			<param name="publish_tf" value="true"/>
+			<param name="slowdown" value="$(arg slowdown)"/>
 		  <remap from="odometry" to="/$(arg mav_name)/ground_truth/odometry" />
     </node>
     <!-- Unreal sensor model -->
@@ -71,7 +73,7 @@
     </node>
   </group>
 
-		<!-- Voxblox -->
+	<!-- Voxblox -->
 	<group ns="voxblox">
 		<node name="voxblox_node" pkg="voxblox_ros" type="esdf_server" output="screen" args="-alsologtostderr">
 			<remap from="pointcloud" to="/unreal/ue_sensor_out"/>
@@ -82,12 +84,19 @@
 			<param name="color_mode" value="color" />
 			<param name="use_tf_transforms" value="true" />
 			<param name="update_mesh_every_n_sec" value="1.0" />
-			<param name="min_time_between_msgs_sec" value="0.0" />
+			<param name="output_mesh_as_pointcloud" value="true" />
 			<param name="method" value="$(arg method)" />
-			<param name="use_const_weight" value="false" />
+			<param name="max_ray_length" value="10.0" />
 			<param name="allow_clear" value="true" />
 			<param name="clear_sphere_for_planning" value="false" />
 			<param name="verbose" value="$(arg verbose_voxblox)" />
+		</node>
+		
+		<!-- Quality Measure -->
+		<node name="progress_monitor" pkg="mav_active_3d_planning" type="progress_monitor.py" output="screen">
+			<remap from="tsdf_in" to="voxblox_node/tsdf_pointcloud" />
+			<remap from="surface_pcl_in" to="voxblox_node/surface_pointcloud" />
+			<param name="voxel_size" value="$(arg voxel_size)" />
 		</node>
   </group>
   
@@ -109,11 +118,11 @@
 		
 		<!-- Simulation manager for launching and monitoring-->
 		<node name="simulation_manager" pkg="unreal_cv_ros" type="simulation_manager.py" output="screen" ns="unreal">
-		<param name="ns_mav" value="/$(arg mav_name)" />
-		<param name="monitor" value="true" />
-		<remap from="ue_raw_in" to="ue_sensor_raw" />
-		<remap from="ue_out_in" to="ue_sensor_out" />
-	</node>
+			<param name="ns_mav" value="/$(arg mav_name)" />
+			<param name="monitor" value="true" />
+			<remap from="ue_raw_in" to="ue_sensor_raw" />
+			<remap from="ue_out_in" to="ue_sensor_out" />
+		</node>
 		
 		<!-- Visualization -->
 		<node type="rviz" name="rviz_voxblox" pkg="rviz" args="-d $(find unreal_cv_ros)/cfg/$(arg rviz_config_voxblox)"/>
