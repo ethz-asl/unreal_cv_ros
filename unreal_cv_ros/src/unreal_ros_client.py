@@ -74,7 +74,6 @@ class UnrealRosClient:
 
         # Setup mode
         if self.mode == 'test':
-            self.previous_pose = None                               # Update only when pose has changed
             rospy.Timer(rospy.Duration(0.01), self.test_callback)   # 100 Hz try capture frequency
 
         elif self.mode == 'standard':
@@ -171,19 +170,12 @@ class UnrealRosClient:
         position = client.request('vget /camera/%d/location' % self.camera_id)
         position = np.array([float(x) for x in str(position).split(' ')])
         orientation = client.request('vget /camera/%d/rotation' % self.camera_id)
-        orientation = str(orientation).split(' ')
-        orientation = np.array([float(x) for x in orientation])
-        pose = [position, orientation]
+        orientation = np.array([float(x) for x in str(orientation).split(' ')])
 
-        # Update only if there is a new view, publish images
-        if np.array_equal(pose, self.previous_pose):
-            return
-
-        self.previous_pose = pose
         timestamp = rospy.Time.now()
         self.publish_images(timestamp)
 
-        position, orientation = self.transform_from_unreal(pose)
+        position, orientation = self.transform_from_unreal(position, orientation)
         self.tf_br.sendTransform((position[0], position[1], position[2]),
                                  (orientation[0], orientation[1], orientation[2], orientation[3]),
                                  timestamp, "camera_link", "world")
@@ -233,16 +225,13 @@ class UnrealRosClient:
         return position, orientation
 
     @staticmethod
-    def transform_from_unreal(pose):
+    def transform_from_unreal(position, orientation):
         '''
         Transform from unreal coordinates to odom coordinates (to camera_link)
-        Input:      pose ([x, y, z, pitch, yaw, roll] array, in unrealcv coordinates)
+        Input:      position [x, y, z,], orientation [pitch, yaw, roll], in unrealcv coordinates)
         Output:     position ([x, y, z] array)
                     orientation ([x, y, z, w] quaternion)
         '''
-        # Read out array
-        position = pose[0]
-        orientation = pose[1]
 
         # Transform from unreal coordinate units
         position = position / 100  # default is cm

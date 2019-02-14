@@ -1,22 +1,18 @@
 <launch>
-  <!-- Unreal/Routine arguments -->
-  <arg name="sensor_model_config" default="sensor_model_config.yaml"/>
-
-
 
   <!-- Unreal vision client -->
   <node name="unreal_ros_client" pkg="unreal_cv_ros" type="unreal_ros_client.py" output="screen">
-    <rosparam param="mode">test</rosparam>
+    <param name="mode" value="test"/>
   </node>
   
   <!-- Unreal sensor model -->
   <node name="unreal_sensor_model" pkg="unreal_cv_ros" type="sensor_model.py" output="screen">
-    <rosparam command="load" file="$(find unreal_cv_ros)/cfg/$(arg sensor_model_config)"/>
+    <param name="model_type" value="ground_truth"/>
     <param name="camera_params_ns" value="unreal_ros_client/camera_params"/>
     <remap from="ue_sensor_raw" to="unreal_ros_client/ue_sensor_raw" />
   </node>
 
-  <!-- RVIZ -->
+  <!-- Visualization -->
   <node type="rviz" name="rviz_pcl" pkg="rviz" args="-d $(find unreal_cv_ros)/cfg/example_test.rviz"/>
   
   <!-- static camera transform (odom to camera frame)-->

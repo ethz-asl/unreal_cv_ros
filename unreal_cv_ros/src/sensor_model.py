@@ -74,8 +74,9 @@ class SensorModel:
             z = z[mask]
             rgb = rgb[mask]
 
-        # Sensor model processing
-        # if self.model == 'ground_truth':
+        # Sensor model processing, put other processing functions here
+        if self.model == 'ground_truth':
+            x, y, z, rgb = self.process_ground_truth(x, y, z, rgb)
 
         # Publish pointcloud
         data = np.transpose(np.vstack((x, y, z, rgb)))
@@ -126,6 +127,10 @@ class SensorModel:
         packed = pack('%di' % len(color), *color)
         unpacked = unpack('%df' % len(color), packed)
         return np.array(unpacked)
+
+    def process_ground_truth(self, x, y, z, rgb):
+        # Does nothing
+        return x, y, z, rgb
 
 
 if __name__ == '__main__':

@@ -6,7 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /Axes1
+        - /VoxbloxMesh1
+        - /Mav Pose1
       Splitter Ratio: 0.5
     Tree Height: 565
   - Class: rviz/Selection
@@ -52,13 +53,13 @@ Visualization Manager:
     - Class: voxblox_rviz_plugin/VoxbloxMesh
       Enabled: true
       Name: VoxbloxMesh
-      Topic: /voxblox/voxblox_node/mesh
+      Topic: /planner/voxblox_node/mesh
       Unreliable: false
       Value: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /firefly/reference_trajectory
-      Name: Marker
+      Name: Reference Trajectory
       Namespaces:
         "": true
       Queue Size: 100
@@ -66,40 +67,10 @@ Visualization Manager:
     - Class: rviz/Axes
       Enabled: true
       Length: 0.400000006
-      Name: Axes
+      Name: Mav Pose
       Radius: 0.100000001
       Reference Frame: firefly/base_link
       Value: true
-    - Alpha: 0.100000001
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 1.95402527
-      Min Color: 0; 0; 0
-      Min Intensity: 0.400000006
-      Name: Traversability
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.100000001
-      Style: Spheres
-      Topic: /firefly/random_planner/traversable
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -125,7 +96,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.00999999978
       Style: Flat Squares
-      Topic: /unreal/ue_sensor_out
+      Topic: /unreal/unreal_sensor_model/ue_sensor_out
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -155,25 +126,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 14.0492802
+      Distance: 14.6425667
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: 1.73392141
+        Y: -0.0900675356
+        Z: 1.46585464
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.629796863
+      Pitch: 0.869796634
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.930889785
+      Yaw: 2.53589272
     Saved: ~
 Window Geometry:
   Displays:
