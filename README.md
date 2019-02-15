@@ -236,7 +236,7 @@ Note that the test mode is mostly meant to explore the effects of different sens
 ## Run with MAV
 This example demonstrates how to setup the full scale MAV simulation. It uses unreal_cv_ros for perception and collision checking, gazebo to model the MAV physics, a MPC high level and PID low level controller for trajectory tracking and voxblox to integrate the pointclouds into a map. 
 
-![uecvros_ex_mav](https://user-images.githubusercontent.com/36043993/52844476-93bc6500-30fc-11e9-9aa8-dcf0eaa87fef.png)
+![uecvros_ex_mav](https://user-images.githubusercontent.com/36043993/52851608-814b2700-310e-11e9-9b41-256d11898bbc.png)
 Voxblox map that is continually built as the MAV follows a trajectory through the room.
 
 Run the RealisticRendering demo as in the previous example. Make sure to tab out of it immediately to disable player control. This is necessary because unreal_cv_ros sets its world frame at the current MAV position on startup and this example expects the game demo to be in its initial state. Furthermore, if captured, unreal engine continues to accept player input that may interfere with the simulation. 
