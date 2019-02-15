@@ -13,7 +13,7 @@
   <!-- Unreal/Routine arguments -->
   <arg name="model_type" default="ground_truth"/>
   <arg name="uecv_mode" default="standard"/>
-  <arg name="slowdown" default="0.4"/>
+  <arg name="slowdown" default="0.3"/>
   
   <!-- Planner -->
   <arg name="delay" default="5.0"/>
@@ -70,6 +70,7 @@
     <!-- Unreal vision client -->
     <node name="unreal_ros_client" pkg="unreal_cv_ros" type="unreal_ros_client.py" output="screen">
 			<param name="mode" value="$(arg uecv_mode)"/>
+		  <param name="slowdown" value="$(arg slowdown)"/>
 		  <remap from="odometry" to="/$(arg mav_name)/ground_truth/odometry" />
     </node>
     
