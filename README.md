@@ -23,29 +23,52 @@ unreal_cv_ros is a package to allow ROS based simulation of a MAV equipped with 
 
 **Examples**
 * [Run in test mode](#Run-in-test-mode)
-* [Run with MAV in standard mode](#Run-with-MAV-in-standard-mode)
+* [Run with MAV](#Run-with-MAV)
 
 **Troubleshooting**
 * [Frequent Issues](#Troubleshooting)
 
 # Installation
-Install as every other ROS package...
+**Install the ros package:**
+
+Installation instructions on Linux:
+
+Move to your catkin workspace: 
+```
+cd catkin_ws/src
+```
+Install using a SSH key: 
+```
+git clone git@github.com:ethz-asl/unreal_cv_ros.git
+```
+Compile: 
+```
+catkin build unreal_cv_ros
+```
+**Install Unreal Engine:**
+
+To install unreal engine (including the unreal editor) on Linux follow the instructions [here](https://wiki.unrealengine.com/Building_On_Linux).
+
 
 ## Dependencies
-The unreal_ros_client node depends on the unrealcv python library `pip install unrealcv`.
+Unreal_cv_ros depends on the unrealcv python library `pip install unrealcv`.
+
+The perception functionalities (unreal_ros_client + sensor_model) only depend on core ros packages.
+
+To use the full MAV simulation, further packages are required: `gazebo_ros`, `rotors_gazebo`, `mav_nonlinear_mpc`, `mav_lowlevel_attitude_controller` and `voxblox_ros`.
 
 ## Data Repository
-Related ressources can be downloaded [here](https://www.polybox.ethz.ch/index.php/s/6vhPDINcISbEogg). This repo was developped and tested with unrealcv v0.3.10 on Unreal Engine 4.16.3.
+Related ressources can be downloaded from [here](https://www.polybox.ethz.ch/index.php/s/6vhPDINcISbEogg). This repo and the related ressources were developped and tested with unrealcv v0.3.10 and Unreal Engine 4.16.3.
 
 # ROS nodes
 ## unreal_ros_client
-This node manages the unrealcv client and the connection with a running UE4 game. It sets the MAV position and orientation within the unreal game and produces the images and camera calibration used by a 3D sensor model.
+This node manages the unrealcv client and the connection with a running UE4 game. It sets the camera position and orientation within the unreal game and produces the raw image data and camera calibration used by the sensor_model.
 
 ### Parameters
 * **mode** In which mode the client is operated. Currently implemented are:
   * **test** Navigate the MAV manually in the unreal game. The client will periodically publish the sensor data.
   * **standard** The camera pose is set based on the `/odometry` topic and images are taken. Uses the default unrealcv plugin, operates at ~1 up to 2 Hz.
-  * **fast** Similar to standard, but requires a custom unrealcv command (See [Unrealcv Plugin Setup](#Unrealcv-Plugin-Setup)).  Operates at ~3 up to 5 Hz.
+  * **fast** Similar to standard, but requires the custom unrealcv plugin (See [Unrealcv Plugin Setup](#Unrealcv-Plugin-Setup)).  Operates at ~3 up to 5 Hz.
   
   Default is 'standard'.
 * **collision_on** Set to true to check for collision in the unreal game. Set to false to set the camera anyway. May result in rendering artifacts if the camera overlaps with objects. Default is true.
@@ -65,7 +88,7 @@ This node manages the unrealcv client and the connection with a running UE4 game
 
 
 ## sensor_model
-This node converts the UE client output into a pointcloud for further processing and artificially simulates the behaviour of a 3D sensor (e.g. a stereo reconstruction pipeline).
+This node converts the unreal_ros_client output into a pointcloud for further processing. Sensor specific behaviour can be simulated by artificially altering the ground truth data.
 
 ### Parameters
 * **model_type** Which sensor to simulate. Currently implemented are: 
@@ -84,7 +107,7 @@ This node converts the UE client output into a pointcloud for further processing
 
 
 ## simulation_manager
-This node is used to launch the full MAV simulation using gazebo as a physics engine and an unreal game for perception and collision modeling. It is used to coordinate simulation setup and monitor or supervise the unreal_ros vision pipeline.
+This node is used to launch the full MAV simulation using gazebo as a physics engine and an unreal game for perception and collision modeling. It is used to coordinate simulation setup and monitor the unreal_cv_ros pipeline performance.
 
 ### Parameters
 * **ns_gazebo** Namespace of gazebo, including the node name. Default is '/gazebo'.
@@ -94,10 +117,10 @@ This node is used to launch the full MAV simulation using gazebo as a physics en
 
 ### Input Topics
 * **ue_raw_in** of type `unreal_cv_ros.msg/UeSensorRaw`. Output of the unreal\_ros\_client for performance measurements. Only available if monitor is true.
-* **ue_out_in** of type `sensor_msgs.msg/PointCloud2`. Output of the sensor model for performance measurements. Only available if monitor is true.
+* **ue_out_in** of type `sensor_msgs.msg/PointCloud2`. Output of the sensor model for performance measurements. This topic needs to be matched to check for correct startup.
 
 ### Output Topics
-* **simulation_ready** of type `std_msgs.msg/String`. After successful start of the pipeline publishes "Simulation Ready" to let other nodes start or handle the simulation.
+* **simulation_ready** of type `std_msgs.msg/String`. After successful start of the pipeline publishes "Simulation Ready" to let other nodes start or take over.
 
 ### Services
 * **display_monitor** of type `std_srvs.srv/Empty`. Print the current monitoring measurements to console. Only available if monitor is true.
@@ -201,24 +224,33 @@ For application with the unreal\_ros\_client, the coordinate transformations are
 
 # Examples
 ## Run in test mode
-To illustrate the vision pipeline in stand-alone fashion, we run the unreal_ros_client in test mode with ground_truth as our sensor model. Please download the [RealisticRendering](http://docs.unrealcv.org/en/master/reference/model_zoo.html#rr) game binary and launch the game. In a command window type `roslaunch unreal_cv_ros example_test.launch` to start the pipeline and wait until the connection is setup (takes few seconds). You can now navigate the drone inside the game using the mouse and W-A-S-D keys while a rviz window displayes the produced ground truth pointclouds as well as the MAV pose in the unreal world frame.
+To illustrate the vision pipeline in stand-alone fashion, we run the unreal_ros_client in test mode with ground_truth as our sensor model. 
 
-**Note:** Since the taking of images and read-out of the unreal-pose is done sequentially, fast movement in the game may result in the frames not being well aligned.
+![uecvros_ex_test](https://user-images.githubusercontent.com/36043993/52844470-9028de00-30fc-11e9-975f-0b204ae52f6d.png)
+View of the realistic rendering demo (left) and the produced ground truth point cloud with corresponding camera pose (right).
 
-## Run with MAV in standard mode
-TODO: update this example to the current manager and simple trajectory publisher node.
+Please download the [RealisticRendering](http://docs.unrealcv.org/en/master/reference/model_zoo.html#rr) game binary and launch the game. In a command window type `roslaunch unreal_cv_ros example_test.launch` to start the pipeline and wait until the connection is setup (takes few seconds). You can now navigate the camera inside the game using the mouse and W-A-S-D keys while a rviz window displayes the produced ground truth pointclouds as well as the camera pose in the unreal world frame.
 
-(This example demonstrates the full scale MAV simulation using gazebo for MAV physics, a MPC high level and PID low level controller for trajectory tracking, voxblox for mapping and a planner node for trajectory generation. Setup and run the RealisticRendering demo as in the test example. In a command window type `roslaunch unreal_cv_ros example_full.launch` to start the pipeline. The simulation\_manager will supervise the startup of all elements (this may take few seconds). If everything sets up cleanly, the planner will start a random walk. In a rviz window, the current position of the MAV is depicted together with the executed and planned trajectories. Furthermore, the voxblox mesh representation of the room will be updated as it is explored.
+Note that the test mode is mostly meant to explore the effects of different sensor models on the pointcloud. Since the taking of images and read-out of the unreal-pose is done sequentially, fast movement in the game may result in some frames not being well aligned.
 
-**Note:** During simulation, the unreal game still takes commands from the user. Make sure to tab out of the game so that the user input does not interfere with the simulation setup. )
+## Run with MAV
+This example demonstrates how to setup the full scale MAV simulation. It uses unreal_cv_ros for perception and collision checking, gazebo to model the MAV physics, a MPC high level and PID low level controller for trajectory tracking and voxblox to integrate the pointclouds into a map. 
 
+![uecvros_ex_mav](https://user-images.githubusercontent.com/36043993/52844476-93bc6500-30fc-11e9-9aa8-dcf0eaa87fef.png)
+Voxblox map that is continually built as the MAV follows a trajectory through the room.
+
+Run the RealisticRendering demo as in the previous example. Make sure to tab out of it immediately to disable player control. This is necessary because unreal_cv_ros sets its world frame at the current MAV position on startup and this example expects the game demo to be in its initial state. Furthermore, if captured, unreal engine continues to accept player input that may interfere with the simulation. 
+
+In a command window type `roslaunch unreal_cv_ros example_mav.launch` to start the pipeline. The simulation\_manager will supervise the startup of all elements (this may take few seconds). After everything set up cleanly, the example node will publish two trajectory segments, which the MAV tries to follow to explore the room. In a rviz window, the current MAV pose is depicted together the planned trajectories and the voxblox mesh representation of the room as it is explored.
 
 # Troubleshooting
 Known Issues and what to do about them:
-1. Error message "Error addressing the unrealcv client. Try restarting the game.":
-    - Make sure that only a single unreal game **or** editor is running. When using the editor, the unrealcv plugin is loaded already during startup (without the game itself running!). Since unrealcv per default connects to `localhost:9000` the server will be blocked if any other instance of it is running.
-2. The produced pointclouds are not well aligned with the requested pose / are smeared out:
-    - If running in standard mode, consider switching to fast mode which is not only faster but also more stable. (In standard mode  every orientation change is carried out as rotation movement inducing increased rendering time and rotation offsets, especially for high rotation rates).
-    - Give unreal engine more rendering time by adjusting the `slowdown` paramter of the unreal\_ros\_client. (This problem typically occurs for low rendering/frame rates in the unreal game).
-3. I get collision warnings for quickly executed trajectories:
+1. **Error message "Error addressing the unrealcv client. Try restarting the game.":**
+    - Make sure that only a single unreal game **or** editor is running. When using the editor, the unrealcv plugin is loaded already during startup (without the game itself running!). Since unrealcv per default connects to `localhost:9000` the server will be blocked if any other instance of it is running. 
+2. **The produced pointclouds are not well aligned with the requested pose / are smeared out:**
+    - If running in standard mode, consider switching to fast mode which is not only faster but also more stable. (In standard mode every orientation change is carried out as rotation movement inducing rotation offsets (such as motion blurr when using the DefaultPawn camera), especially for high rotation rates).
+    - Give unreal engine more time for rendering and settling by adjusting the `slowdown` paramter of the unreal\_ros\_client. (This problem typically occurs for low rendering/frame rates in the unreal game or when using the DefaultPawn).
+3. **I get strange collision warnings where there shouldn't be any:**
+    - Make sure you are not using simple collision, which can greatly inflate collision bounds of objects. See [here](#Static-mesh-collision) for more info.
+4. **I get collision warnings for quickly executed trajectories:**
     - The unreal teleport action with collision checking sweeps (as far as I know) a linear path between every request. Try increasing the unreal\_ros\_client's update rate or slowing down simulated time.
