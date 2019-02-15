@@ -114,7 +114,7 @@ class SimulationManager:
 
         # Wait for unreal client
         rospy.loginfo("Waiting for unreal client to setup ...")
-        rospy.wait_for_message("ue_raw_in", UeSensorRaw)
+        rospy.wait_for_message("ue_out_in", PointCloud2)
         rospy.loginfo("Waiting for unreal client to setup ... done.")
 
         # Finish
