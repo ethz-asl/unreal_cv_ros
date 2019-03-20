@@ -1,7 +1,7 @@
 <launch>
   <!-- Gazebo arguments -->
   <arg name="mav_name" default="firefly"/>
-  <arg name="gui" default="false"/>
+  <arg name="gui" default="true"/>
   <arg name="verbose_gazebo" default="false"/>
 
   <!-- Voxblox arguments -->
