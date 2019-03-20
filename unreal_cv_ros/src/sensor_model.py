@@ -28,7 +28,7 @@ class SensorModel:
         self.flatten_distance = rospy.get_param('~flatten_distance', 0)  # Set to 0 to ignore
 
         # Setup sensor type
-        model_types = {'ground_truth': 'ground_truth'}      # Dictionary of implemented models
+        model_types = {'ground_truth': 'ground_truth', 'kinect': 'kinect'}      # Dictionary of implemented models
         selected = model_types.get(model_type_in, 'NotFound')
         if selected == 'NotFound':
             warning = "Unknown sensor model '" + model_type_in + "'. Implemented models are: " + \
@@ -75,8 +75,8 @@ class SensorModel:
             rgb = rgb[mask]
 
         # Sensor model processing, put other processing functions here
-        if self.model == 'ground_truth':
-            x, y, z, rgb = self.process_ground_truth(x, y, z, rgb)
+        if self.model == 'kinect':
+            x, y, z, rgb = self.process_kinect(x, y, z, rgb)
 
         # Publish pointcloud
         data = np.transpose(np.vstack((x, y, z, rgb)))
@@ -128,9 +128,22 @@ class SensorModel:
         unpacked = unpack('%df' % len(color), packed)
         return np.array(unpacked)
 
-    def process_ground_truth(self, x, y, z, rgb):
-        # Does nothing
-        return x, y, z, rgb
+    @staticmethod
+    def process_kinect(x, y, z, rgb):
+        # Simulate a kinect sensor model according to this paper: https://ieeexplore.ieee.org/abstract/document/6375037
+        # The effect of the target plane orientation theta is neglected (its constant until theta ~ 60/70 deg).
+        mask = (z > 0.5) & (z < 3.0)
+        x = x[mask]
+        y = y[mask]
+        z = z[mask]
+        rgb = rgb[mask]
+        sigma_l = 0.0014 * z
+        sigma_z = 0.0012 + 0.0019 * (z - 0.4) ** 2
+        mu = np.zeros(np.shape(z))
+        dx = np.random.normal(mu, sigma_l)
+        dy = np.random.normal(mu, sigma_l)
+        dz = np.random.normal(mu, sigma_z)
+        return x+dx, y+dy, z+dz, rgb
 
 
 if __name__ == '__main__':

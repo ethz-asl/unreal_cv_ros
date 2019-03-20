@@ -92,12 +92,13 @@ This node converts the unreal_ros_client output into a pointcloud for further pr
 
 ### Parameters
 * **model_type** Which sensor to simulate. Currently implemented are: 
-  * **ground_truth:** Produces the ground truth pointcloud without additional processing. 
+  * **ground_truth:** Produces the ground truth pointcloud without additional processing.
+  * **kinect:** Simulates a Kinect 3D sensor according to [this paper](https://ieeexplore.ieee.org/abstract/document/6375037). Notice that the sensor range is cropped to \[0.5, 3.0\] m and that the inclination angle is neglected, since it is constant up until ~60, 70 degrees.
   
   Default is 'ground_truth'.
-* **camera_params_ns** Namespace where to read the unreal camera parameters from, which are expected as {height, width, focal_length}. Notice that the sensor_model waits until the camera params are set on the ros parameter server (e.g. from the unreal_ros_client). Default is 'unreal\_ros\_client/camera_params'.
+* **camera_params_ns** Namespace where to read the unreal camera parameters from, which are expected as {height, width, focal_length}. Notice that the sensor_model waits until the camera params are set on the ros parameter server (e.g. from the unreal\_ros\_client). Default is 'unreal\_ros\_client/camera_params'.
 * **maximum_distance** All points whose original ray length is beyond maximum_distance are removed from the pointcloud. Set to 0 to keep all points. Default is 0.0.
-* **flatten_distance** Sets the ray length of every point whose ray length is larger than flatten_distance to flatten_distance. Set to 0 to keep all points unchanged. Default is 0.0.
+* **flatten_distance** Sets the ray length of every point whose ray length is larger than flatten\_distance to flatten\_distance. Set to 0 to keep all points unchanged. Default is 0.0.
 
 ### Input Topics
 * **ue_sensor_raw** of type `unreal_cv_ros.msg/UeSensorRaw`. Output of the unreal\_ros\_client that is to be further processed.
