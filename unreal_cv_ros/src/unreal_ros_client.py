@@ -26,7 +26,7 @@ class UnrealRosClient:
         # Read in params
         self.mode = rospy.get_param('~mode', "standard")  # Client mode (test, standard, fast, fast2)
         self.collision_on = rospy.get_param('~collision_on', True)  # Check for collision
-        self.publish_tf = rospy.get_param('~publish_tf', False)  # If true publish the camera transformation in tf
+        self.publish_tf = rospy.get_param('~publish_tf', True)  # If true publish the camera transformation in tf
         self.slowdown = rospy.get_param('~slowdown', 0.0)  # Artificially slow down rate for UE to finish rendering
         self.camera_id = rospy.get_param('~camera_id', 0)  # CameraID for unrealcv compatibility (usually use 0)
         self.queue_size = rospy.get_param('~queue_size', 1)   # How many requests are kept

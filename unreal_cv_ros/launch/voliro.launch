@@ -23,7 +23,7 @@
   <include file="$(find overactuated_simulation)/launch/kea_simulation_unreal.launch"/>
 
    <!-- tof normal estimation-->
-  <include file="$(find tof_normal_estimation)/launch/tof_normal_node.launch"/>
+  <include file="$(find tof_normal_estimation)/launch/tof_normal_node_unreal.launch"/>
 
 
    <include file="$(find coverage_planning_voxblox)/launch/mapping_unreal.launch">
