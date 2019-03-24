@@ -62,6 +62,9 @@ class SensorModel:
         if self.flatten_distance > 0:
             img_depth = np.clip(img_depth, 0, self.flatten_distance)
         (x, y, z) = self.depth_to_3d(img_depth)
+        xtemp = x
+        x = z
+        z = xtemp
 
         # Pack RGB image (for ros representation)
         rgb = self.rgb_to_float(img_color)
@@ -82,7 +85,7 @@ class SensorModel:
         data = np.transpose(np.vstack((x, y, z, rgb)))
         msg = PointCloud2()
         msg.header.stamp = ros_data.header.stamp
-        msg.header.frame_id = 'camera'
+        msg.header.frame_id = 'camera_link'#camera_link
         msg.width = data.shape[0]
         msg.height = 1
         msg.fields = [
