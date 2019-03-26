@@ -82,7 +82,7 @@ class SensorModel:
         data = np.transpose(np.vstack((x, y, z, rgb)))
         msg = PointCloud2()
         msg.header.stamp = ros_data.header.stamp
-        msg.header.frame_id = 'camera'
+        msg.header.frame_id = 'camera_visualization'
         msg.width = data.shape[0]
         msg.height = 1
         msg.fields = [
