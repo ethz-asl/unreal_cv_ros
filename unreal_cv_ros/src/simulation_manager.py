@@ -98,8 +98,10 @@ class SimulationManager:
         # Wait for drone to spawn (imu is publishing)
         rospy.loginfo("Waiting for MAV to spawn ...")
         rospy.wait_for_message(self.ns_mav + "/imu", Imu)
+        rospy.loginfo("Waiting for MAV to spawn ... done.")
 
         # Initialize drone stable at [0, 0, 0]
+        rospy.loginfo("Waiting for MAV to stabilize ...")
         dist = 10       # Position and velocity
         while dist >= 0.1:
             traj_msg.header.stamp = rospy.Time.now()
@@ -110,7 +112,7 @@ class SimulationManager:
             pos = state.pose.position
             twist = state.twist.linear
             dist = np.sqrt(pos.x**2 + pos.y**2 + pos.z**2) + np.sqrt(twist.x**2 + twist.y**2 + twist.z**2)
-        rospy.loginfo("Waiting for MAV to spawn ... done.")
+        rospy.loginfo("Waiting for MAV to stabilize ... done.")
 
         # Wait for unreal client
         rospy.loginfo("Waiting for unreal client to setup ...")

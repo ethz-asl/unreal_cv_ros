@@ -8,6 +8,7 @@ import rospy
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
 from unreal_cv_ros.msg import UeSensorRaw
+from std_srvs.srv import SetBool
 import tf
 
 # Python
@@ -22,6 +23,7 @@ class UnrealRosClient:
     def __init__(self):
         '''  Initialize ros node, unrealcv client and params '''
         rospy.on_shutdown(self.reset_client)
+        self.should_terminate = False
 
         # Read in params
         self.mode = rospy.get_param('~mode', "standard")  # Client mode (test, standard, fast, fast2)
@@ -29,7 +31,7 @@ class UnrealRosClient:
         self.publish_tf = rospy.get_param('~publish_tf', False)  # If true publish the camera transformation in tf
         self.slowdown = rospy.get_param('~slowdown', 0.0)  # Artificially slow down rate for UE to finish rendering
         self.camera_id = rospy.get_param('~camera_id', 0)  # CameraID for unrealcv compatibility (usually use 0)
-        self.queue_size = rospy.get_param('~queue_size', 1)   # How many requests are kept
+        self.queue_size = rospy.get_param('~queue_size', 1)  # How many requests are kept
 
         # Select client mode
         mode_types = {'standard': 'standard', 'fast': 'fast', 'test': 'test'}
@@ -74,22 +76,23 @@ class UnrealRosClient:
 
         # Setup mode
         if self.mode == 'test':
-            rospy.Timer(rospy.Duration(0.01), self.test_callback)   # 100 Hz try capture frequency
+            rospy.Timer(rospy.Duration(0.01), self.test_callback)  # 100 Hz try capture frequency
 
         elif self.mode == 'standard':
             self.sub = rospy.Subscriber("odometry", Odometry, self.odom_callback, queue_size=self.queue_size,
-                                        buff_size=(2**24) * self.queue_size)
+                                        buff_size=(2 ** 24) * self.queue_size)
             # The buffersize needs to be large enough to fit all messages, otherwise strange things happen
-            self.previous_odom_msg = None                   # Previously processed Odom message
+            self.previous_odom_msg = None  # Previously processed Odom message
             self.collision_tolerance = rospy.get_param('~collision_tol', 10)  # Distance threshold in UE units
 
         elif self.mode == 'fast':
             self.sub = rospy.Subscriber("odometry", Odometry, self.fast_callback, queue_size=self.queue_size,
-                                        buff_size=(2**24) * self.queue_size)
-            self.previous_odom_msg = None                   # Previously processed Odom message
+                                        buff_size=(2 ** 24) * self.queue_size)
+            self.previous_odom_msg = None  # Previously processed Odom message
 
         # Finish setup
         self.pub = rospy.Publisher("~ue_sensor_raw", UeSensorRaw, queue_size=10)
+        rospy.Service('~terminate_with_reset', SetBool, self.terminate_with_reset_srv)
         if self.collision_on:
             self.collision_pub = rospy.Publisher("~collision", String, queue_size=10)
         rospy.loginfo("unreal_ros_client is ready in %s mode." % self.mode)
@@ -97,6 +100,8 @@ class UnrealRosClient:
     def fast_callback(self, ros_data):
         ''' Use the custom unrealcv command to get images and collision checks. vget UECVROS command returns the images
         and then sets the new pose, therefore the delay. '''
+        if self.should_terminate:
+            return
         # Slowdown to give more rendering time to the unreal engine
         time.sleep(self.slowdown)
 
@@ -134,6 +139,8 @@ class UnrealRosClient:
 
     def odom_callback(self, ros_data):
         ''' Produce images for given odometry '''
+        if self.should_terminate:
+            return
         # Slowdown to give more rendering time to the unreal engine (should not be necessary in normal mode)
         time.sleep(self.slowdown)
 
@@ -215,13 +222,13 @@ class UnrealRosClient:
         # Transformation of position to relative UE coordsys
         yaw = self.coord_yaw / 180 * math.pi
         position = np.array([math.cos(yaw) * x + math.sin(yaw) * y, math.sin(yaw) * x - math.cos(yaw) * y, z])
-        position = position * 100 + self.coord_origin       # default units are cm
+        position = position * 100 + self.coord_origin  # default units are cm
 
         # Transformation of orientation to relative UE coordsys
         q_rot = tf.transformations.quaternion_from_euler(0, 0, -yaw)
         orientation = tf.transformations.quaternion_multiply(q_rot, orientation)
         (r, p, y) = tf.transformations.euler_from_quaternion(orientation)
-        orientation = np.array([-p, -y, r]) * 180 / math.pi     # default units are deg
+        orientation = np.array([-p, -y, r]) * 180 / math.pi  # default units are deg
         return position, orientation
 
     @staticmethod
@@ -248,8 +255,21 @@ class UnrealRosClient:
     @staticmethod
     def reset_client():
         # Free up unrealcv connection cleanly when shutting down
-        rospy.loginfo('On unreal_ros_client shutdown: disconnecting unrealcv client.')
         client.disconnect()
+        rospy.loginfo('On unreal_ros_client shutdown: disconnected unrealcv client.')
+
+    def terminate_with_reset_srv(self, _):
+        # Reset to initial conditions after experiment
+        rospy.loginfo("Terminate_with_reset service requested, initiating reset.")
+        self.should_terminate = True    # This stops the client from taking other requests (odom topic)
+        goal = np.concatenate((self.coord_origin, np.array([0, self.coord_yaw, 0])), axis=0)
+        time.sleep(2.0)     # Make sure regular execution is finished -> unrealcv client is ready
+        if self.mode == 'fast':
+            client.request("vget /uecvros/full" + "".join([" {0:f}".format(x) for x in goal]) + " -1.0 " +
+                           str(self.camera_id))
+        else:
+            client.request("vset /camera/{0:d}/pose {1:f} {2:f} {3:f} {4:f} {5:f} {6:f}".format(self.camera_id, *goal))
+        return [True, ""]
 
     def on_collision(self):
         # Collision handling for all modes here
