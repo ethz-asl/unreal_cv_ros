@@ -26,7 +26,8 @@ class SensorModel:
         # Read in params
         model_type_in = rospy.get_param('~model_type', 'ground_truth')
         camera_params_ns = rospy.get_param('~camera_params_ns', rospy.get_namespace()+"unreal_ros_client/camera_params")
-        self.publish_images = rospy.get_param('~publish_images', False)
+        self.publish_color_images = rospy.get_param('~publish_color_images', False)
+        self.publish_gray_images = rospy.get_param('~publish_gray_images', False)
         self.maximum_distance = rospy.get_param('~maximum_distance', 0)  # Set to 0 to keep all points
         self.flatten_distance = rospy.get_param('~flatten_distance', 0)  # Set to 0 to ignore
 
@@ -60,9 +61,12 @@ class SensorModel:
         # Initialize node
         self.pub = rospy.Publisher("~ue_sensor_out", PointCloud2, queue_size=10)
         self.sub = rospy.Subscriber("ue_sensor_raw", UeSensorRaw, self.callback, queue_size=10)
-        if self.publish_images:
-            self.image_pub = rospy.Publisher("~ue_sensor_image_out", Image, queue_size=10)
+        if self.publish_color_images or self.publish_gray_images:
             self.cv_bridge = cv_bridge.CvBridge()
+        if self.publish_color_images:
+            self.color_img_pub = rospy.Publisher("~ue_color_image_out", Image, queue_size=10)
+        if self.publish_gray_images:
+            self.gray_img_pub = rospy.Publisher("~ue_gray_image_out", Image, queue_size=10)
 
         rospy.loginfo("Sensor model setup cleanly.")
 
@@ -115,13 +119,16 @@ class SensorModel:
         self.pub.publish(msg)
 
         # If requested, also publish the image
-        if self.publish_images:
-            img = cv2.cvtColor(img_color[:, :, 0:3], cv2.COLOR_RGB2GRAY)
-            # img = cv2.cvtColor(img_color[:, :, 0:3], cv2.COLOR_RGB2BGR)  # cv bridge error U8C1 ?!?! gray ok for rovio
-            img_msg = self.cv_bridge.cv2_to_imgmsg(img, "passthrough")
+        if self.publish_color_images:
+            img_msg = self.cv_bridge.cv2_to_imgmsg(img_color, "rgba8")
             img_msg.header.stamp = ros_data.header.stamp
             img_msg.header.frame_id = 'camera'
-            self.image_pub.publish(img_msg)
+            self.color_img_pub.publish(img_msg)
+        if self.publish_gray_images:
+            img_msg = self.cv_bridge.cv2_to_imgmsg(cv2.cvtColor(img_color[:, :, 0:3], cv2.COLOR_RGB2GRAY), "mono8")
+            img_msg.header.stamp = ros_data.header.stamp
+            img_msg.header.frame_id = 'camera'
+            self.gray_img_pub.publish(img_msg)
 
     def depth_to_3d(self, img_depth):
         ''' Create point cloud from depth image and camera params. Returns a single array for x, y and z coords '''
@@ -172,6 +179,8 @@ class SensorModel:
         return x+dx, y+dy, z+dz, rgb
 
     def process_gaussian_depth_noise(self, z_in):
+        # Add a depth dependent guassian error term to the perceived depth. Mean and stddev can be specified as up to
+        # deg3 polynomials.
         mu = np.ones(np.shape(z_in)) * self.coefficients[0]
         sigma = np.ones(np.shape(z_in)) * self.coefficients[4]
         for i in range(1, 4):
