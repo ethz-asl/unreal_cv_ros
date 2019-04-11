@@ -102,14 +102,16 @@ This node converts the unreal_ros_client output into a pointcloud for further pr
 * **camera_params_ns** Namespace where to read the unreal camera parameters from, which are expected as {height, width, focal_length}. Notice that the sensor_model waits until the camera params are set on the ros parameter server (e.g. from the unreal\_ros\_client). Default is 'unreal\_ros\_client/camera_params'.
 * **maximum_distance** All points whose original ray length is beyond maximum_distance are removed from the pointcloud. Set to 0 to keep all points. Default is 0.0.
 * **flatten_distance** Sets the ray length of every point whose ray length is larger than flatten\_distance to flatten\_distance. Set to 0 to keep all points unchanged. Default is 0.0.
-* **publish_images** If true publish a grayscale image with every pointcloud (e.g. for integration with rovio). Default is False.
+* **publish_color_images** In addition to the point clouds publish the perceived images, encoded as 4 channel RGBA. Default is False.
+* **publish_gray_images** If true publish a gray scale image with every pointcloud (e.g. for integration with rovio). Default is False.
 
 ### Input Topics
 * **ue_sensor_raw** of type `unreal_cv_ros.msg/UeSensorRaw`. Output of the unreal\_ros\_client that is to be further processed.
 
 ### Output Topics
 * **ue_sensor_out** of type `sensor_msgs.msg/PointCloud2`. Resulting pointcloud after applying the simulated sensing pipeline.
-* **ue_sensor_image_out** of type `sensor_msgs.msg/Image`. Grayscale image of the current view. Only published if publish_images is true.
+* **ue_color_image_out** of type `sensor_msgs.msg/Image`. Color image of the current view. Only published if publish_color_images is true.
+* **ue_gray_image_out** of type `sensor_msgs.msg/Image`. Gray scale image of the current view. Only published if publish_gray_images is true.
 
 
 ## simulation_manager
