@@ -159,12 +159,12 @@ class SimulationManager:
 
     def mon_print_handle(self, _):
         print("="*14 + " performance monitor " + "="*14)
-        print("Fields: [s]          avg  -  std  -  min  -  max ")
-        values = np.array(self.mon_client_rate_real)
+        print("Fields: [Hz] / [s]   avg  -  std  -  min  -  max ")
+        values = 1.0 / np.array(self.mon_client_rate_real)
         if len(values) > 0:
             print("Client rate (wall): {0:05.2f} - {1:05.2f} - {2:05.2f} - {3:05.2f}"
                   .format(np.mean(values), np.std(values), np.min(values), np.max(values)))
-        values = np.array(self.mon_client_rate_ros)
+        values = 1.0 / np.array(self.mon_client_rate_ros)
         if len(values) > 0:
             print("Client rate  (ros): {0:05.2f} - {1:05.2f} - {2:05.2f} - {3:05.2f}"
                   .format(np.mean(values), np.std(values), np.min(values), np.max(values)))
@@ -172,11 +172,11 @@ class SimulationManager:
         if len(values) > 0:
             print("Client delay (ros): {0:05.2f} - {1:05.2f} - {2:05.2f} - {3:05.2f}"
                   .format(np.mean(values), np.std(values), np.min(values), np.max(values)))
-        values = np.array(self.mon_sensor_rate_real)
+        values = 1.0 / np.array(self.mon_sensor_rate_real)
         if len(values) > 0:
             print("Sensor rate (wall): {0:05.2f} - {1:05.2f} - {2:05.2f} - {3:05.2f}"
                   .format(np.mean(values), np.std(values), np.min(values), np.max(values)))
-        values = np.array(self.mon_sensor_rate_ros)
+        values = 1.0 / np.array(self.mon_sensor_rate_ros)
         if len(values) > 0:
             print("Sensor rate  (ros): {0:05.2f} - {1:05.2f} - {2:05.2f} - {3:05.2f}"
                   .format(np.mean(values), np.std(values), np.min(values), np.max(values)))
@@ -185,6 +185,7 @@ class SimulationManager:
             print("Sensor delay (ros): {0:05.2f} - {1:05.2f} - {2:05.2f} - {3:05.2f}"
                   .format(np.mean(values), np.std(values), np.min(values), np.max(values)))
         print("=" * 49)
+        return []
 
 
 if __name__ == '__main__':
