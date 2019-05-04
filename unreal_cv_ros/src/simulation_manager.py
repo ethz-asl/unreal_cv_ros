@@ -27,10 +27,11 @@ class SimulationManager:
     def __init__(self):
         '''  Initialize ros node and read params '''
         # Parse parameters
-        self.ns_gazebo = rospy.get_param('~ns_gazebo', "/gazebo")   
+        self.ns_gazebo = rospy.get_param('~ns_gazebo', "/gazebo")
         self.ns_mav = rospy.get_param('~ns_mav', "/firefly")
-        self.regulate = rospy.get_param('~regulate', False)     # Manage odom throughput for unreal_ros_client
-        self.monitor = rospy.get_param('~monitor', False)       # Measure performance of unreal pipeline
+        self.regulate = rospy.get_param('~regulate', False)  # Manage odom throughput for unreal_ros_client
+        self.monitor = rospy.get_param('~monitor', False)  # Measure performance of unreal pipeline
+        self.initial_position = rospy.get_param('~initial_position', [0, 0, 0])  # x, y, z [m]
 
         if self.monitor:
             self.horizon = rospy.get_param('~horizon', 10)  # How many messages are kept for monitoring
@@ -76,17 +77,21 @@ class SimulationManager:
         traj_msg = MultiDOFJointTrajectory()
         traj_msg.joint_names = ["base_link"]
         transforms = Transform()
-        transforms.translation.x = 0.0
-        transforms.translation.y = 0.0
-        transforms.translation.z = 0.0
+        transforms.translation.x = self.initial_position[0]
+        transforms.translation.y = self.initial_position[1]
+        transforms.translation.z = self.initial_position[2]
         point = MultiDOFJointTrajectoryPoint([transforms], [Twist()], [Twist()], rospy.Duration(0))
         traj_msg.points.append(point)
 
         # Prepare initialization Get/SetModelState service
         set_model_srv = rospy.ServiceProxy(self.ns_gazebo + "/set_model_state", SetModelState)
         get_model_srv = rospy.ServiceProxy(self.ns_gazebo + "/get_model_state", GetModelState)
-        mav_name = self.ns_mav[np.max([i for i in range(len(self.ns_mav)) if self.ns_mav[i] == "/"])+1:]
-        model_state_set = ModelState(mav_name, Pose(), Twist(), "world")
+        mav_name = self.ns_mav[np.max([i for i in range(len(self.ns_mav)) if self.ns_mav[i] == "/"]) + 1:]
+        pose = Pose()
+        pose.position.x = self.initial_position[0]
+        pose.position.y = self.initial_position[1]
+        pose.position.z = self.initial_position[2]
+        model_state_set = ModelState(mav_name, pose, Twist(), "world")
 
         # Wake up gazebo
         rospy.loginfo("Waiting for gazebo to wake up ...")
@@ -102,7 +107,7 @@ class SimulationManager:
 
         # Initialize drone stable at [0, 0, 0]
         rospy.loginfo("Waiting for MAV to stabilize ...")
-        dist = 10       # Position and velocity
+        dist = 10  # Position and velocity
         while dist >= 0.1:
             traj_msg.header.stamp = rospy.Time.now()
             traj_pub.publish(traj_msg)
@@ -111,7 +116,9 @@ class SimulationManager:
             state = get_model_srv(mav_name, "world")
             pos = state.pose.position
             twist = state.twist.linear
-            dist = np.sqrt(pos.x**2 + pos.y**2 + pos.z**2) + np.sqrt(twist.x**2 + twist.y**2 + twist.z**2)
+            dist = np.sqrt((pos.x - self.initial_position[0]) ** 2 + (pos.y - self.initial_position[1]) ** 2 +
+                           (pos.z - self.initial_position[2]) ** 2) + np.sqrt(
+                twist.x ** 2 + twist.y ** 2 + twist.z ** 2)
         rospy.loginfo("Waiting for MAV to stabilize ... done.")
 
         # Wait for unreal client
@@ -133,9 +140,9 @@ class SimulationManager:
             self.mon_client_prev_ros = time_ros
             return
 
-        self.mon_client_rate_real.append(time_real-self.mon_client_prev_real)
+        self.mon_client_rate_real.append(time_real - self.mon_client_prev_real)
         self.mon_client_prev_real = time_real
-        self.mon_client_rate_ros.append(time_ros-self.mon_client_prev_ros)
+        self.mon_client_rate_ros.append(time_ros - self.mon_client_prev_ros)
         self.mon_client_prev_ros = time_ros
         self.mon_client_delay_ros.append(time_ros - ros_data.header.stamp.to_sec())
         self.mon_client_time.append(time_ros)
@@ -158,7 +165,7 @@ class SimulationManager:
         self.mon_sensor_time.append(time_ros)
 
     def mon_print_handle(self, _):
-        print("="*14 + " performance monitor " + "="*14)
+        print("=" * 14 + " performance monitor " + "=" * 14)
         print("Fields: [Hz] / [s]   avg  -  std  -  min  -  max ")
         values = 1.0 / np.array(self.mon_client_rate_real)
         if len(values) > 0:
@@ -192,4 +199,3 @@ if __name__ == '__main__':
     rospy.init_node('simulation_manager', anonymous=True)
     sm = SimulationManager()
     rospy.spin()
-
