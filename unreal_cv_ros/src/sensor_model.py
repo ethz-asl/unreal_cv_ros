@@ -3,10 +3,12 @@
 # ros
 import rospy
 from unreal_cv_ros.msg import UeSensorRaw
-from sensor_msgs.msg import PointCloud2, PointField
+from sensor_msgs.msg import PointCloud2, PointField, Image
 
 # Image conversion
 import io
+import cv2
+import cv_bridge
 
 # Python
 import sys
@@ -24,11 +26,14 @@ class SensorModel:
         # Read in params
         model_type_in = rospy.get_param('~model_type', 'ground_truth')
         camera_params_ns = rospy.get_param('~camera_params_ns', rospy.get_namespace()+"unreal_ros_client/camera_params")
+        self.publish_color_images = rospy.get_param('~publish_color_images', False)
+        self.publish_gray_images = rospy.get_param('~publish_gray_images', False)
         self.maximum_distance = rospy.get_param('~maximum_distance', 0)  # Set to 0 to keep all points
         self.flatten_distance = rospy.get_param('~flatten_distance', 0)  # Set to 0 to ignore
 
         # Setup sensor type
-        model_types = {'ground_truth': 'ground_truth', 'kinect': 'kinect'}      # Dictionary of implemented models
+        model_types = {'ground_truth': 'ground_truth', 'kinect': 'kinect',
+                       'gaussian_depth_noise': 'gaussian_depth_noise'}      # Dictionary of implemented models
         selected = model_types.get(model_type_in, 'NotFound')
         if selected == 'NotFound':
             warning = "Unknown sensor model '" + model_type_in + "'. Implemented models are: " + \
@@ -36,6 +41,14 @@ class SensorModel:
             rospy.logfatal(warning[:-2])
         else:
             self.model = selected
+
+        # Model dependent params
+        if self.model == 'gaussian_depth_noise':
+            # coefficients for polynomial, f(z) = k0 + k1z + k2z^2 + k3z^3
+            self.coefficients = np.array([0.0]*8)
+            for i in range(4):
+                self.coefficients[i] = rospy.get_param('~k_mu_%i' % i, 0.0)
+                self.coefficients[4 + i] = rospy.get_param('~k_sigma_%i' % i, 0.0)
 
         # Initialize camera params from params or wait for unreal_ros_client to publish them
         if not rospy.has_param(camera_params_ns+'width'):
@@ -48,6 +61,12 @@ class SensorModel:
         # Initialize node
         self.pub = rospy.Publisher("~ue_sensor_out", PointCloud2, queue_size=10)
         self.sub = rospy.Subscriber("ue_sensor_raw", UeSensorRaw, self.callback, queue_size=10)
+        if self.publish_color_images or self.publish_gray_images:
+            self.cv_bridge = cv_bridge.CvBridge()
+        if self.publish_color_images:
+            self.color_img_pub = rospy.Publisher("~ue_color_image_out", Image, queue_size=10)
+        if self.publish_gray_images:
+            self.gray_img_pub = rospy.Publisher("~ue_gray_image_out", Image, queue_size=10)
 
         rospy.loginfo("Sensor model setup cleanly.")
 
@@ -77,6 +96,8 @@ class SensorModel:
         # Sensor model processing, put other processing functions here
         if self.model == 'kinect':
             x, y, z, rgb = self.process_kinect(x, y, z, rgb)
+        elif self.model == 'gaussian_depth_noise':
+            z = self.process_gaussian_depth_noise(z)
 
         # Publish pointcloud
         data = np.transpose(np.vstack((x, y, z, rgb)))
@@ -96,6 +117,18 @@ class SensorModel:
         msg.is_dense = True
         msg.data = np.float32(data).tostring()
         self.pub.publish(msg)
+
+        # If requested, also publish the image
+        if self.publish_color_images:
+            img_msg = self.cv_bridge.cv2_to_imgmsg(img_color, "rgba8")
+            img_msg.header.stamp = ros_data.header.stamp
+            img_msg.header.frame_id = 'camera'
+            self.color_img_pub.publish(img_msg)
+        if self.publish_gray_images:
+            img_msg = self.cv_bridge.cv2_to_imgmsg(cv2.cvtColor(img_color[:, :, 0:3], cv2.COLOR_RGB2GRAY), "mono8")
+            img_msg.header.stamp = ros_data.header.stamp
+            img_msg.header.frame_id = 'camera'
+            self.gray_img_pub.publish(img_msg)
 
     def depth_to_3d(self, img_depth):
         ''' Create point cloud from depth image and camera params. Returns a single array for x, y and z coords '''
@@ -144,6 +177,18 @@ class SensorModel:
         dy = np.random.normal(mu, sigma_l)
         dz = np.random.normal(mu, sigma_z)
         return x+dx, y+dy, z+dz, rgb
+
+    def process_gaussian_depth_noise(self, z_in):
+        # Add a depth dependent guassian error term to the perceived depth. Mean and stddev can be specified as up to
+        # deg3 polynomials.
+        mu = np.ones(np.shape(z_in)) * self.coefficients[0]
+        sigma = np.ones(np.shape(z_in)) * self.coefficients[4]
+        for i in range(1, 4):
+            if self.coefficients[i] != 0:
+                mu = mu + np.power(z_in, i) * self.coefficients[i]
+            if self.coefficients[4 + i] != 0:
+                sigma = sigma + np.power(z_in, i) * self.coefficients[4 + i]
+        return z_in + np.random.normal(mu, sigma)
 
 
 if __name__ == '__main__':
