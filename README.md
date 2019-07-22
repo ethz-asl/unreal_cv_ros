@@ -2,16 +2,20 @@ unreal_cv_ros is a package to allow ROS based simulation of a MAV equipped with 
 
 # Table of Contents
 **Installation**
-* [Installation](#Installation)
 * [Dependencies](#Dependencies)
+* [Installation](#Installation)
 * [Data Repository](#Data-Repository)
 
-**ROS nodes**
+**Examples**
+* [Run in test mode](#Run-in-test-mode)
+* [Run with MAV](#Run-with-MAV)
+
+**Documentation: ROS Nodes**
 * [unreal_ros_client](#unreal_ros_client)
 * [sensor_model](#sensor_model)
 * [simulation_manager](#simulation_manager)
 
-**Working with Unreal**
+**Documentation: Working with Unreal**
 * [Unrealcv Plugin Setup](#Unrealcv-Plugin-Setup)
 * [Creating UE4 worlds](#Creating-UE4-worlds)
 * [When to use which mode](#When-to-use-which-mode)
@@ -21,15 +25,26 @@ unreal_cv_ros is a package to allow ROS based simulation of a MAV equipped with 
 * [Producing ground truth pointclouds](#Producing-ground-truth-pointclouds)
 * [The Unreal Coordinate System](#The-Unreal-Coordinate-System)
 
-**Examples**
-* [Run in test mode](#Run-in-test-mode)
-* [Run with MAV](#Run-with-MAV)
-
 **Troubleshooting**
 * [Frequent Issues](#Troubleshooting)
 
 # Installation
-**Install the ros package:**
+## Dependencies
+**System Dependencies:**
+
+Unreal_cv_ros requires the unrealcv python library: `pip install unrealcv`.
+
+**ROS Packages:**
+
+The perception functionalities (unreal_ros_client + sensor_model) do only depend on core ROS functionalities.
+
+To run the full MAV simulation, these additional packages are needed: 
+* `rotors_simulator` ([https://github.com/ethz-asl/rotors_simulator](https://github.com/ethz-asl/rotors_simulator))
+* `mav_control_rw` ([https://github.com/ethz-asl/mav_control_rw](https://github.com/ethz-asl/mav_control_rw))
+* `voxblox` ([https://github.com/ethz-asl/voxblox](https://github.com/ethz-asl/voxblox))
+
+## Installation
+**Install the ROS package:**
 
 Installation instructions on Linux:
 
@@ -47,20 +62,33 @@ catkin build unreal_cv_ros
 ```
 **Install Unreal Engine:**
 
-To install unreal engine (including the unreal editor) on Linux follow the instructions [here](https://wiki.unrealengine.com/Building_On_Linux).
-
-
-## Dependencies
-Unreal_cv_ros depends on the unrealcv python library `pip install unrealcv`.
-
-The perception functionalities (unreal_ros_client + sensor_model) only depend on core ros packages.
-
-To use the full MAV simulation, further packages are required: `gazebo_ros`, `rotors_gazebo`, `mav_nonlinear_mpc`, `mav_lowlevel_attitude_controller` and `voxblox_ros`.
+Installing Unreal Engine on Linux requires building it from source. Complete installation instrcutions are given on [their webpage](https://wiki.unrealengine.com/Building_On_Linux).
 
 ## Data Repository
-Related ressources can be downloaded from [here](https://www.polybox.ethz.ch/index.php/s/6vhPDINcISbEogg). This repo and the related ressources were developped and tested with unrealcv v0.3.10 and Unreal Engine 4.16.3.
+Other related ressources, such as blueprint classes and experiment scenarios, can be downloaded from [here](https://www.polybox.ethz.ch/index.php/s/6vhPDINcISbEogg). This repo and the related ressources were developped and tested with unrealcv v0.3.10 and Unreal Engine 4.16.3.
 
-# ROS nodes
+# Examples
+## Run in test mode
+To illustrate the vision pipeline in stand-alone fashion, we run the unreal_ros_client in test mode with ground_truth as our sensor model. 
+
+![uecvros_ex_test](https://user-images.githubusercontent.com/36043993/52844470-9028de00-30fc-11e9-975f-0b204ae52f6d.png)
+View of the realistic rendering demo (left) and the produced ground truth point cloud with corresponding camera pose (right).
+
+Please download the [RealisticRendering](http://docs.unrealcv.org/en/master/reference/model_zoo.html#rr) game binary and launch the game. In a command window type `roslaunch unreal_cv_ros example_test.launch` to start the pipeline and wait until the connection is setup (takes few seconds). You can now navigate the camera inside the game using the mouse and W-A-S-D keys while a rviz window displayes the produced ground truth pointclouds as well as the camera pose in the unreal world frame.
+
+Note that the test mode is mostly meant to explore the effects of different sensor models on the pointcloud. Since the taking of images and read-out of the unreal-pose is done sequentially, fast movement in the game may result in some frames not being well aligned.
+
+## Run with MAV
+This example demonstrates how to setup the full scale MAV simulation. It uses unreal_cv_ros for perception and collision checking, gazebo to model the MAV physics, a MPC high level and PID low level controller for trajectory tracking and voxblox to integrate the pointclouds into a map. 
+
+![uecvros_ex_mav](https://user-images.githubusercontent.com/36043993/52851608-814b2700-310e-11e9-9b41-256d11898bbc.png)
+Voxblox map that is continually built as the MAV follows a trajectory through the room.
+
+Run the RealisticRendering demo as in the previous example. Make sure to tab out of it immediately to disable player control. This is necessary because unreal_cv_ros sets its world frame at the current MAV position on startup and this example expects the game demo to be in its initial state. Furthermore, if captured, unreal engine continues to accept player input that may interfere with the simulation. 
+
+In a command window type `roslaunch unreal_cv_ros example_mav.launch` to start the pipeline. The simulation\_manager will supervise the startup of all elements (this may take few seconds). After everything set up cleanly, the example node will publish two trajectory segments, which the MAV tries to follow to explore the room. In a rviz window, the current MAV pose is depicted together the planned trajectories and the voxblox mesh representation of the room as it is explored.
+
+# Documentation: ROS Nodes
 ## unreal_ros_client
 This node manages the unrealcv client and the connection with a running UE4 game. It sets the camera position and orientation within the unreal game and produces the raw image data and camera calibration used by the sensor_model.
 
@@ -134,7 +162,7 @@ This node is used to launch the full MAV simulation using gazebo as a physics en
 * **display_monitor** of type `std_srvs.srv/Empty`. Print the current monitoring measurements to console. Only available if monitor is true.
 
 
-# Working with Unreal
+# Documentation: Working with Unreal
 
 ## Unrealcv Plugin Setup
 ### Standard Plugin
@@ -229,27 +257,6 @@ For application with the unreal\_ros\_client, the coordinate transformations are
 * **Unreal World** The default coordinate system is X-forward, Y-right, Z-up. Default units are cm.
 * **Rotation Direction** Positive rotation directions around the unreal world coordinate axes are mathematically positive around the X axis and negative around the Y and Z axes.
 * **Rotation parametrization** The Unreal engine interface and therefore also the unrealcv commands parse rotations as pitch-yaw-roll (pay attention to the order). However, inside the engine rotations are performed as Euler-XYZ rotations (i.e. roll-pitch-yaw). Default units are degrees.
-
-# Examples
-## Run in test mode
-To illustrate the vision pipeline in stand-alone fashion, we run the unreal_ros_client in test mode with ground_truth as our sensor model. 
-
-![uecvros_ex_test](https://user-images.githubusercontent.com/36043993/52844470-9028de00-30fc-11e9-975f-0b204ae52f6d.png)
-View of the realistic rendering demo (left) and the produced ground truth point cloud with corresponding camera pose (right).
-
-Please download the [RealisticRendering](http://docs.unrealcv.org/en/master/reference/model_zoo.html#rr) game binary and launch the game. In a command window type `roslaunch unreal_cv_ros example_test.launch` to start the pipeline and wait until the connection is setup (takes few seconds). You can now navigate the camera inside the game using the mouse and W-A-S-D keys while a rviz window displayes the produced ground truth pointclouds as well as the camera pose in the unreal world frame.
-
-Note that the test mode is mostly meant to explore the effects of different sensor models on the pointcloud. Since the taking of images and read-out of the unreal-pose is done sequentially, fast movement in the game may result in some frames not being well aligned.
-
-## Run with MAV
-This example demonstrates how to setup the full scale MAV simulation. It uses unreal_cv_ros for perception and collision checking, gazebo to model the MAV physics, a MPC high level and PID low level controller for trajectory tracking and voxblox to integrate the pointclouds into a map. 
-
-![uecvros_ex_mav](https://user-images.githubusercontent.com/36043993/52851608-814b2700-310e-11e9-9b41-256d11898bbc.png)
-Voxblox map that is continually built as the MAV follows a trajectory through the room.
-
-Run the RealisticRendering demo as in the previous example. Make sure to tab out of it immediately to disable player control. This is necessary because unreal_cv_ros sets its world frame at the current MAV position on startup and this example expects the game demo to be in its initial state. Furthermore, if captured, unreal engine continues to accept player input that may interfere with the simulation. 
-
-In a command window type `roslaunch unreal_cv_ros example_mav.launch` to start the pipeline. The simulation\_manager will supervise the startup of all elements (this may take few seconds). After everything set up cleanly, the example node will publish two trajectory segments, which the MAV tries to follow to explore the room. In a rviz window, the current MAV pose is depicted together the planned trajectories and the voxblox mesh representation of the room as it is explored.
 
 # Troubleshooting
 Known Issues and what to do about them:
