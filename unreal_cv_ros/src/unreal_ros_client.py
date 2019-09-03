@@ -177,7 +177,7 @@ class UnrealRosClient:
         client.request("vset /camera/{0:d}/rotation {1:f} {2:f} {3:f}".format(self.camera_id, *orientation))
 
     def generate_traj_callback(self, _):
-        ''' Produce images and broadcast odometry from unreal in-game controlled camera movement '''
+        ''' Produce poses from unreal in-game controlled camera movement to be recorded and used as human defined planning'''
         # Get current UE pose
         pose = client.request('vget /camera/%d/pose' % self.camera_id)
         pose = np.array([float(x) for x in str(pose).split(' ')])
