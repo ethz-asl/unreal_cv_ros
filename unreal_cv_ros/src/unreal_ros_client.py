@@ -7,6 +7,7 @@ from unrealcv import client
 import rospy
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseStamped
 from unreal_cv_ros.msg import UeSensorRaw
 from std_srvs.srv import SetBool
 import tf
@@ -34,7 +35,7 @@ class UnrealRosClient:
         self.queue_size = rospy.get_param('~queue_size', 1)  # How many requests are kept
 
         # Select client mode
-        mode_types = {'standard': 'standard', 'fast': 'fast', 'test': 'test'}
+        mode_types = {'standard': 'standard', 'fast': 'fast', 'test': 'test', 'generate': 'generate'}
         selected = mode_types.get(self.mode, 'NotFound')
         if selected == 'NotFound':
             warning = "Unknown client mode '" + self.mode + "'. Implemented modes are: " + \
@@ -77,6 +78,10 @@ class UnrealRosClient:
         # Setup mode
         if self.mode == 'test':
             rospy.Timer(rospy.Duration(0.01), self.test_callback)  # 100 Hz try capture frequency
+
+        elif self.mode == 'generate':
+            rospy.Timer(rospy.Duration(0.05), self.generate_traj_callback) # 20 Hz capture
+            self.posepub = rospy.Publisher("~ue_sensor_pose", PoseStamped, queue_size=10)
 
         elif self.mode == 'standard':
             self.sub = rospy.Subscriber("odometry", Odometry, self.odom_callback, queue_size=self.queue_size,
@@ -171,13 +176,38 @@ class UnrealRosClient:
 
         client.request("vset /camera/{0:d}/rotation {1:f} {2:f} {3:f}".format(self.camera_id, *orientation))
 
+    def generate_traj_callback(self, _):
+        ''' Produce poses from unreal in-game controlled camera movement to be recorded and used as human defined planning'''
+        # Get current UE pose
+        pose = client.request('vget /camera/%d/pose' % self.camera_id)
+        pose = np.array([float(x) for x in str(pose).split(' ')])
+        position = pose[:3]
+        orientation = pose[3:]
+
+        timestamp = rospy.Time.now()
+        position, orientation = self.transform_from_unreal(position, orientation)
+        pose = PoseStamped()
+        pose.header.stamp = timestamp
+        pose.header.frame_id = "cam"
+        pose.pose.position.x = position[0]
+        pose.pose.position.y = position[1]
+        pose.pose.position.z = position[2]
+
+        pose.pose.orientation.x = orientation[0]
+        pose.pose.orientation.y = orientation[1]
+        pose.pose.orientation.z = orientation[2]
+        pose.pose.orientation.w = orientation[3]
+        
+        self.posepub.publish(pose)
+        
+
     def test_callback(self, _):
         ''' Produce images and broadcast odometry from unreal in-game controlled camera movement '''
         # Get current UE pose
-        position = client.request('vget /camera/%d/location' % self.camera_id)
-        position = np.array([float(x) for x in str(position).split(' ')])
-        orientation = client.request('vget /camera/%d/rotation' % self.camera_id)
-        orientation = np.array([float(x) for x in str(orientation).split(' ')])
+        pose = client.request('vget /camera/%d/pose' % self.camera_id)
+        pose = np.array([float(x) for x in str(pose).split(' ')])
+        position = pose[:3]
+        orientation = pose[3:]
 
         timestamp = rospy.Time.now()
         self.publish_images(timestamp)
