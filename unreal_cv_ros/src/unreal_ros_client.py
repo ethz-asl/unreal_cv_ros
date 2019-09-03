@@ -80,7 +80,6 @@ class UnrealRosClient:
             rospy.Timer(rospy.Duration(0.01), self.test_callback)  # 100 Hz try capture frequency
 
         elif self.mode == 'generate':
-            print("in generate mode")
             rospy.Timer(rospy.Duration(0.05), self.generate_traj_callback) # 20 Hz capture
             self.posepub = rospy.Publisher("~ue_sensor_pose", PoseStamped, queue_size=10)
 
@@ -180,10 +179,10 @@ class UnrealRosClient:
     def generate_traj_callback(self, _):
         ''' Produce images and broadcast odometry from unreal in-game controlled camera movement '''
         # Get current UE pose
-        position = client.request('vget /camera/%d/location' % self.camera_id)
-        position = np.array([float(x) for x in str(position).split(' ')])
-        orientation = client.request('vget /camera/%d/rotation' % self.camera_id)
-        orientation = np.array([float(x) for x in str(orientation).split(' ')])
+        pose = client.request('vget /camera/%d/pose' % self.camera_id)
+        pose = np.array([float(x) for x in str(pose).split(' ')])
+        position = pose[:3]
+        orientation = pose[3:]
 
         timestamp = rospy.Time.now()
         position, orientation = self.transform_from_unreal(position, orientation)
@@ -205,10 +204,10 @@ class UnrealRosClient:
     def test_callback(self, _):
         ''' Produce images and broadcast odometry from unreal in-game controlled camera movement '''
         # Get current UE pose
-        position = client.request('vget /camera/%d/location' % self.camera_id)
-        position = np.array([float(x) for x in str(position).split(' ')])
-        orientation = client.request('vget /camera/%d/rotation' % self.camera_id)
-        orientation = np.array([float(x) for x in str(orientation).split(' ')])
+        pose = client.request('vget /camera/%d/pose' % self.camera_id)
+        pose = np.array([float(x) for x in str(pose).split(' ')])
+        position = pose[:3]
+        orientation = pose[3:]
 
         timestamp = rospy.Time.now()
         self.publish_images(timestamp)
