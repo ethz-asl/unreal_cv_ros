@@ -36,7 +36,8 @@ Unreal_cv_ros requires the unrealcv python library: `pip install unrealcv`.
 
 **ROS Packages:**
 
-The perception functionalities (unreal_ros_client + sensor_model) do only depend on core ROS functionalities.
+The perception functionalities (unreal_ros_client + sensor_model) depend on:
+* `catkin_simple` ([https://github.com/catkin/catkin_simple](https://github.com/catkin/catkin_simple))
 
 To run the full MAV simulation, these additional packages are needed: 
 * `rotors_simulator` ([https://github.com/ethz-asl/rotors_simulator](https://github.com/ethz-asl/rotors_simulator))
