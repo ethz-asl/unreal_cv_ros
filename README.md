@@ -272,3 +272,5 @@ Known Issues and what to do about them:
     - Make sure you are not using simple collision, which can greatly inflate collision bounds of objects. See [here](#Static-mesh-collision) for more info.
 4. **I get collision warnings for quickly executed trajectories:**
     - The unreal teleport action with collision checking sweeps (as far as I know) a linear path between every request. Try increasing the unreal\_ros\_client's update rate or slowing down simulated time.
+5. **Installing UE4.16: "xlocale.h not found":**
+    - xlocale is no longer needed and this bug is fixed in future versions of UE4, removing the include statements of xlocale should fix the issue.
