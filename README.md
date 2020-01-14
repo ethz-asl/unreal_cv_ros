@@ -1,4 +1,6 @@
-unreal_cv_ros is a package to allow ROS based simulation of a MAV equipped with a 3D-reconstruction sensor. The simulation is performed inside an [unreal engine 4](https://www.unrealengine.com/en-US/what-is-unreal-engine-4) game. The node-game communcation is carried out utilizing the [unrealcv](https://github.com/unrealcv/unrealcv) computer vision plugin for unreal engine 4 (UE4).
+# unreal_cv_ros 
+
+**unreal_cv_ros** is a package to allow ROS based simulation of a MAV equipped with a 3D-reconstruction sensor. The simulation is performed inside an [unreal engine 4](https://www.unrealengine.com/en-US/what-is-unreal-engine-4) game. The node-game communcation is carried out utilizing the [unrealcv](https://github.com/unrealcv/unrealcv) computer vision plugin for unreal engine 4 (UE4).
 
 # Table of Contents
 **Installation**
@@ -49,16 +51,17 @@ To run the full MAV simulation, these additional packages are needed:
 
 Installation instructions on Linux:
 
-Move to your catkin workspace: 
+1. Move to your catkin workspace: 
+```shell script
+cd ~/catkin_ws/src
 ```
-cd catkin_ws/src
+2. Install using a SSH key or via HTTPS: 
+```shell script
+git clone git@github.com:ethz-asl/unreal_cv_ros.git # SSH
+git clone https://github.com/ethz-asl/unreal_cv_ros.git # HTTPS
 ```
-Install using a SSH key: 
-```
-git clone git@github.com:ethz-asl/unreal_cv_ros.git
-```
-Compile: 
-```
+3. Compile: 
+```shell script
 catkin build unreal_cv_ros
 ```
 **Install Unreal Engine:**
