@@ -1,6 +1,6 @@
 # unreal_cv_ros 
 
-**unreal_cv_ros** is a package to allow ROS based simulation of a MAV equipped with a 3D-reconstruction sensor. The simulation is performed inside an [unreal engine 4](https://www.unrealengine.com/en-US/what-is-unreal-engine-4) game. The node-game communcation is carried out utilizing the [unrealcv](https://github.com/unrealcv/unrealcv) computer vision plugin for unreal engine 4 (UE4).
+**unreal_cv_ros** is a package to allow ROS based simulation of a MAV equipped with a 3D-reconstruction sensor. The simulation is performed inside an [Unreal Engine 4](https://www.unrealengine.com/en-US/what-is-unreal-engine-4) (UE4) game. The node-game communcation is carried out utilizing the [UnrealCV](https://github.com/unrealcv/unrealcv) computer vision plugin for UE4.
 
 # Table of Contents
 **Installation**
@@ -18,7 +18,7 @@
 * [simulation_manager](#simulation_manager)
 
 **Documentation: Working with Unreal**
-* [Unrealcv Plugin Setup](#Unrealcv-Plugin-Setup)
+* [UnrealCV Plugin Setup](#UnrealCV-Plugin-Setup)
 * [Creating UE4 worlds](#Creating-UE4-worlds)
 * [When to use which mode](#When-to-use-which-mode)
 * [Pawns and Cameras](#Pawns-and-Cameras)
@@ -34,7 +34,7 @@
 ## Dependencies
 **System Dependencies:**
 
-Unreal_cv_ros requires the unrealcv python library: `pip install unrealcv`.
+Unreal_cv_ros requires the UnrealCV python library: `pip install unrealcv`.
 
 **ROS Packages:**
 
@@ -66,9 +66,10 @@ catkin build unreal_cv_ros
 ```
 **Install Unreal Engine:**
 
-To create custom worlds or run non-shipping projects, the Unreal Engine Editor is used. On Linux, this requires installing Unreal Engine and building it from source. Complete installation instrcutions are given on [their webpage](https://wiki.unrealengine.com/Building_On_Linux). 
+To create custom worlds or run non-shipping projects, the Unreal Engine Editor is used. On Linux, this requires installing Unreal Engine and building it from source. Complete installation instrcutions are given on [their webpage](https://wiki.unrealengine.com/Building_On_Linux). In addition, install the UnrealCV plugin to Unreal Engine as described in [UnrealCV Plugin Setup](#UnrealCV-Plugin-Setup).
 
 The unreal\_cv\_ros pipeline also works with stand-alone games that were built including the UnrealCV plugin (e.g. the examples below), which do not require additional installations.
+
 
 ## Data Repository
 Other related ressources, such as blueprint classes and experiment scenarios, can be downloaded from [here](https://www.polybox.ethz.ch/index.php/s/6vhPDINcISbEogg). This repo and the related ressources were developped and tested with unrealcv v0.3.10 and Unreal Engine 4.16.3.
@@ -170,9 +171,9 @@ This node is used to launch the full MAV simulation using gazebo as a physics en
 
 # Documentation: Working with Unreal
 
-## Unrealcv Plugin Setup
+## UnrealCV Plugin Setup
 ### Standard Plugin
-For the modes `test` and `standard` the default unrealcv plugin is sufficient. Install it to the project or engine as suggested on [their website](http://docs.unrealcv.org/en/master/plugin/install.html). 
+For the modes `test` and `standard` the default UnrealCV plugin is sufficient. Install it to the project or engine as suggested on [their website](http://docs.unrealcv.org/en/master/plugin/install.html). 
 
 ### Adding the 'vget /uecvros/full' command
 This additional command is required to operate in`fast` mode.
