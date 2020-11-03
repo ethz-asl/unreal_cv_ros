@@ -262,8 +262,8 @@ For simulation evaluation, ground truth meshes can be exported from the unreal e
 For application with the unreal\_ros\_client, the coordinate transformations are already implemented so no need to worry. For development/debugging tasks: Unreal and unrealcv use the following coordinate system: 
 
 * **Unreal World** The default coordinate system is X-forward, Y-right, Z-up. Default units are cm.
-* **Rotation Direction** Positive rotation directions around the unreal world coordinate axes are mathematically positive around the X axis and negative around the Y and Z axes.
-* **Rotation parametrization** The Unreal engine interface and therefore also the unrealcv commands parse rotations as pitch-yaw-roll (pay attention to the order). However, inside the engine rotations are performed as Euler-XYZ rotations (i.e. roll-pitch-yaw). Default units are degrees.
+* **Rotation Direction** Positive rotation directions around the unreal world coordinate axes are mathematically positive around the X and Y axes and negative around Z axis.
+* **Rotation parametrization** The Unreal engine interface and therefore also the unrealcv commands parse rotations as pitch-yaw-roll (pay attention to the order). However, inside the engine rotations are performed as Euler-ZYX rotations (i.e. roll-pitch-yaw). Default units are degrees.
 
 # Troubleshooting
 Known Issues and what to do about them:
