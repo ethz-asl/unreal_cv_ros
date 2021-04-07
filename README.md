@@ -66,7 +66,7 @@ catkin build unreal_cv_ros
 ```
 **Install Unreal Engine:**
 
-To create custom worlds or run non-shipping projects, the Unreal Engine Editor is used. On Linux, this requires installing Unreal Engine and building it from source. Complete installation instrcutions are given on [their webpage](https://wiki.unrealengine.com/Building_On_Linux). In addition, install the UnrealCV plugin to Unreal Engine as described in [UnrealCV Plugin Setup](#UnrealCV-Plugin-Setup).
+To create custom worlds or run non-shipping projects, the Unreal Engine Editor is used. On Linux, this requires installing Unreal Engine and building it from source. Complete installation instrcutions are given on [their webpage](https://docs.unrealengine.com/en-US/SharingAndReleasing/Linux/BeginnerLinuxDeveloper/SettingUpAnUnrealWorkflow/index.html). In addition, install the UnrealCV plugin to Unreal Engine as described in [UnrealCV Plugin Setup](#UnrealCV-Plugin-Setup).
 
 The unreal\_cv\_ros pipeline also works with stand-alone games that were built including the UnrealCV plugin (e.g. the examples below), which do not require additional installations.
 
