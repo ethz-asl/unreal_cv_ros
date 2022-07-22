@@ -2,6 +2,8 @@
 
 **unreal_cv_ros** is a package to allow ROS based simulation of a MAV equipped with a 3D-reconstruction sensor. The simulation is performed inside an [Unreal Engine 4](https://www.unrealengine.com/en-US/what-is-unreal-engine-4) (UE4) game. The node-game communcation is carried out utilizing the [UnrealCV](https://github.com/unrealcv/unrealcv) computer vision plugin for UE4.
 
+* **Note:** We recommend also checking out our recent robot simulator [https://github.com/ethz-asl/unreal_airsim](https://github.com/ethz-asl/unreal_airsim) for UE4 based on Microsoft [AirSim](https://microsoft.github.io/AirSim/) with more features and higher performance.
+
 # Table of Contents
 **Installation**
 * [Dependencies](#Dependencies)
