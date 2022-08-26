@@ -4,4 +4,5 @@ Header header
 string color_data
 
 # Binary npy depth image of the scene
-string depth_data
+# string depth_data
+float32[] depth_data

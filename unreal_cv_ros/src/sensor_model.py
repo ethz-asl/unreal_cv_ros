@@ -9,7 +9,7 @@ from sensor_msgs.msg import PointCloud2, PointField, Image
 import io
 import cv2
 import cv_bridge
-
+import PIL.Image
 # Python
 import sys
 import math
@@ -73,8 +73,16 @@ class SensorModel:
     def callback(self, ros_data):
         ''' Produce simulated sensor outputs from raw binary data '''
         # Read out images
-        img_color = np.load(io.BytesIO(bytearray(ros_data.color_data)))
-        img_depth = np.load(io.BytesIO(bytearray(ros_data.depth_data)))
+        img_color = np.asarray(PIL.Image.open(io.BytesIO(ros_data.color_data)))
+        # img_depth = np.asarray(PIL.Image.open(io.BytesIO(ros_data.depth_data)))
+        img_depth = np.array(ros_data.depth_data).reshape((480,640))*64
+        # img_depth = np.asarray(ros_data.depth_data, dtype = np.float32).reshape((480, 640))
+        #print(img_depth[0])
+        # img_depth = np.load(io.BytesIO(ros_data.depth_data))
+        #import pdb
+        #pdb.set_trace()
+        #np.save('~/depth.npy')
+        
         mask_depth = img_depth.reshape(-1)
 
         # Build 3D point cloud from depth
@@ -112,10 +120,11 @@ class SensorModel:
             PointField('z', 8, PointField.FLOAT32, 1),
             PointField('rgb', 12, PointField.FLOAT32, 1)]
         msg.is_bigendian = False
-        msg.point_step = 16
+        msg.point_step = np.dtype(np.float32).itemsize*4# 16
         msg.row_step = msg.point_step * msg.width
         msg.is_dense = True
-        msg.data = np.float32(data).tostring()
+        #msg.data = np.float32(data).tostring()
+        msg.data = data.astype(np.float32).tobytes()
         self.pub.publish(msg)
 
         # If requested, also publish the image

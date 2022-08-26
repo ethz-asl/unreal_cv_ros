@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 # Unrealcv
-from unrealcv import client
+from unrealcv import Client
+client = Client(('172.23.128.1',9000))
+
 
 # ros
 import rospy
@@ -66,6 +68,8 @@ class UnrealRosClient:
 
         # Initialize relative coordinate system (so camera starts at [0, 0, 0] position and [0, 0, yaw]).
         location = client.request('vget /camera/%i/location' % self.camera_id)
+        print(location)
+        #print(location)
         self.coord_origin = np.array([float(x) for x in str(location).split(' ')])
         rot = client.request('vget /camera/%i/rotation' % self.camera_id)
         self.coord_yaw = float(str(rot).split(' ')[1])
@@ -220,14 +224,22 @@ class UnrealRosClient:
     def publish_images(self, header_stamp):
         ''' Produce and publish images for test and standard mode'''
         # Retrieve images
-        res_color = client.request('vget /camera/%d/lit npy' % self.camera_id)
-        res_depth = client.request('vget /camera/%d/depth npy' % self.camera_id)
-
+        # res_color = client.request('vget /camera/%d/lit png' % self.camera_id)
+        # res_depth = client.request('vget /camera/%d/depth npy' % self.camera_id)
+        # quick fix for New Maze environment, camera 1 is a fusion camera
+        res_color = client.request('vget /camera/1/lit png')
+        res_depth = client.request('vget /camera/1/depth npy')
+        #res_depth = np.fromstring(res_depth[80:], dtype=np.float32, count=-1, sep='')
+        res_depth = np.fromstring(res_depth[80:], dtype=np.float32, count=-1, sep='')
+        # res_depth 
         # Publish data
+        
         msg = UeSensorRaw()
         msg.header.stamp = header_stamp
         msg.color_data = res_color
         msg.depth_data = res_depth
+        
+
         self.pub.publish(msg)
 
     def publish_tf_data(self, odom_msg):
