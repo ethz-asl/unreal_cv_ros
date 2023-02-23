@@ -74,7 +74,7 @@ The unreal\_cv\_ros pipeline also works with stand-alone games that were built i
 
 
 ## Data Repository
-Other related ressources, such as blueprint classes and experiment scenarios, can be downloaded from [here](https://drive.google.com/drive/folders/1wIjnqXlGjrCOQdkQn31Ksep88d18O2u7?usp=sharing). This repo and the related ressources were developped and tested with unrealcv v0.3.10 and Unreal Engine 4.16.3.
+Other related resources, such as blueprint classes and experiment scenarios, can be downloaded from [here](https://drive.google.com/drive/folders/1wIjnqXlGjrCOQdkQn31Ksep88d18O2u7?usp=sharing). This repo and the related resources were developped and tested with unrealcv v0.3.10 and Unreal Engine 4.16.3.
 
 # Examples
 ## Run in test mode
