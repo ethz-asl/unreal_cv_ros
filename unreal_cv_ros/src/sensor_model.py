@@ -18,6 +18,11 @@ from struct import pack, unpack
 import time
 
 
+# DEBUGGING
+import pdb
+import matplotlib.pyplot as plt
+
+
 class SensorModel:
 
     def __init__(self):
@@ -75,7 +80,12 @@ class SensorModel:
         # Read out images
         img_color = np.asarray(PIL.Image.open(io.BytesIO(ros_data.color_data)))
         # img_depth = np.asarray(PIL.Image.open(io.BytesIO(ros_data.depth_data)))
-        img_depth = np.array(ros_data.depth_data).reshape((480,640))*64
+        # img_depth = np.array(ros_data.depth_data).reshape((480,640))*64 -> scaling issues
+        img_depth = np.array(ros_data.depth_data).reshape((480,640)) / 1000.0 # TODO: Needs to be checked/adapted correctly
+        # DEBUGGING
+        # plt.imshow(img_depth)
+        # plt.show()
+        # pdb.set_trace()
         # img_depth = np.asarray(ros_data.depth_data, dtype = np.float32).reshape((480, 640))
         #print(img_depth[0])
         # img_depth = np.load(io.BytesIO(ros_data.depth_data))

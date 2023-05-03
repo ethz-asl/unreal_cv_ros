@@ -2,7 +2,7 @@
 
 # Unrealcv
 from unrealcv import Client
-client = Client(('172.23.128.1',9000))
+client = Client(('172.20.0.1',9000))
 
 
 # ros
@@ -19,6 +19,10 @@ import sys
 import math
 import numpy as np
 import time
+
+# DEBUGGING
+import pdb
+import matplotlib.pyplot as plt
 
 
 class UnrealRosClient:
@@ -226,13 +230,20 @@ class UnrealRosClient:
         # Retrieve images
         # res_color = client.request('vget /camera/%d/lit png' % self.camera_id)
         # res_depth = client.request('vget /camera/%d/depth npy' % self.camera_id)
+        # res_color_orig = client.request('vget /camera/%d/lit png' % self.camera_id)
+        # res_depth_orig = client.request('vget /camera/%d/depth npy' % self.camera_id)
         # quick fix for New Maze environment, camera 1 is a fusion camera
         res_color = client.request('vget /camera/1/lit png')
         res_depth = client.request('vget /camera/1/depth npy')
+        pdb.set_trace()
         #res_depth = np.fromstring(res_depth[80:], dtype=np.float32, count=-1, sep='')
         res_depth = np.fromstring(res_depth[80:], dtype=np.float32, count=-1, sep='')
         # res_depth 
         # Publish data
+        # plt.imshow(res_depth.reshape(480,640))
+        # plt.show()
+        # pdb.set_trace()
+
         
         msg = UeSensorRaw()
         msg.header.stamp = header_stamp
