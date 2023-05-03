@@ -81,7 +81,7 @@ class SensorModel:
         img_color = np.asarray(PIL.Image.open(io.BytesIO(ros_data.color_data)))
         # img_depth = np.asarray(PIL.Image.open(io.BytesIO(ros_data.depth_data)))
         # img_depth = np.array(ros_data.depth_data).reshape((480,640))*64 -> scaling issues
-        img_depth = np.array(ros_data.depth_data).reshape((480,640)) / 1000.0 # TODO: Needs to be checked/adapted correctly
+        img_depth = np.array(ros_data.depth_data).reshape((480,640)) / 64.0 # TODO: I think this is the correct scale, at least it looks right
         # DEBUGGING
         # plt.imshow(img_depth)
         # plt.show()
@@ -161,7 +161,9 @@ class SensorModel:
 
         # Process depth image from ray length to camera axis depth
         distance = ((rows - center_y) ** 2 + (cols - center_x) ** 2) ** 0.5
-        points_z = img_depth / (1 + (distance / f) ** 2) ** 0.5
+        # points_z = img_depth / (1 + (distance / f) ** 2) ** 0.5
+        # TODO: Testing if depth images are already in camera axis depth
+        points_z = img_depth
 
         # Create x and y position
         points_x = points_z * (cols - center_x) / f

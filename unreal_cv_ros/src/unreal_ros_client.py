@@ -71,13 +71,20 @@ class UnrealRosClient:
         rospy.set_param('~camera_params', {'width': float(width), 'height': float(height), 'focal_length': float(f)})
 
         # Initialize relative coordinate system (so camera starts at [0, 0, 0] position and [0, 0, yaw]).
-        location = client.request('vget /camera/%i/location' % self.camera_id)
+        # location = client.request('vget /camera/%i/location' % self.camera_id)
+        # Trying to make sure it uses the fusion camera location
+        location = client.request('vget /camera/1/location')
         print(location)
         #print(location)
         self.coord_origin = np.array([float(x) for x in str(location).split(' ')])
-        rot = client.request('vget /camera/%i/rotation' % self.camera_id)
+        # rot = client.request('vget /camera/%i/rotation' % self.camera_id)
+        # Trying to make sure it uses the fusion camera rotation
+        rot = client.request('vget /camera/1/rotation')
         self.coord_yaw = float(str(rot).split(' ')[1])
+        # Apparently only cam0 can be moved
         client.request("vset /camera/{0:d}/rotation 0 {1:f} 0".format(self.camera_id, self.coord_yaw))
+        # Trying to make sure it changes the fusion camera rotation
+        # client.request("vset /camera/{0:d}/rotation 0 {1:f} 0".format(1, self.coord_yaw))
 
         # tf broadcaster
         if self.mode == 'test' or self.publish_tf:
@@ -172,22 +179,35 @@ class UnrealRosClient:
 
         # Set camera in unrealcv
         if self.collision_on:
+            # Apparently only camera0 can be moveto-ed, but the localization is the same as the fusion camera
             client.request('vset /camera/{0:d}/moveto {1:f} {2:f} {3:f}'.format(self.camera_id, *position))
+            # Trying to make sure it uses the fusion camera location
+            # client.request('vset /camera/{0:d}/moveto {1:f} {2:f} {3:f}'.format(1, *position))
 
             # Check collision
-            position_eff = client.request('vget /camera/%d/location' % self.camera_id)
+            # position_eff = client.request('vget /camera/%d/location' % self.camera_id)
+            # Trying to make sure it uses the fusion camera location
+            position_eff = client.request('vget /camera/1/location')
             position_eff = np.array([float(x) for x in str(position_eff).split(' ')])
             if np.linalg.norm(position - position_eff) >= self.collision_tolerance:
                 self.on_collision()
         else:
+            # I think we can only really affect camera0, but camera1 will follow
             client.request("vset /camera/{0:d}/location {1:f} {2:f} {3:f}".format(self.camera_id, *position))
+            # Trying to make sure it uses the fusion camera location
+            # client.request("vset /camera/{0:d}/location {1:f} {2:f} {3:f}".format(1, *position))
 
+        # I think we can only really affect camera0, but camera1 will follow
         client.request("vset /camera/{0:d}/rotation {1:f} {2:f} {3:f}".format(self.camera_id, *orientation))
+        # Trying to make sure it uses the fusion camera rotation
+        # client.request("vset /camera/{0:d}/rotation {1:f} {2:f} {3:f}".format(1, *orientation))
 
     def generate_traj_callback(self, _):
         ''' Produce poses from unreal in-game controlled camera movement to be recorded and used as human defined planning'''
         # Get current UE pose
-        pose = client.request('vget /camera/%d/pose' % self.camera_id)
+        # pose = client.request('vget /camera/%d/pose' % self.camera_id)
+        # Trying to make sure it uses the fusion camera pose
+        pose = client.request('vget /camera/1/pose')
         pose = np.array([float(x) for x in str(pose).split(' ')])
         position = pose[:3]
         orientation = pose[3:]
@@ -212,7 +232,9 @@ class UnrealRosClient:
     def test_callback(self, _):
         ''' Produce images and broadcast odometry from unreal in-game controlled camera movement '''
         # Get current UE pose
-        pose = client.request('vget /camera/%d/pose' % self.camera_id)
+        # pose = client.request('vget /camera/%d/pose' % self.camera_id)
+        # Trying to make sure it uses the fusion camera pose
+        pose = client.request('vget /camera/1/pose')
         pose = np.array([float(x) for x in str(pose).split(' ')])
         position = pose[:3]
         orientation = pose[3:]
@@ -235,8 +257,8 @@ class UnrealRosClient:
         # quick fix for New Maze environment, camera 1 is a fusion camera
         res_color = client.request('vget /camera/1/lit png')
         res_depth = client.request('vget /camera/1/depth npy')
-        pdb.set_trace()
         #res_depth = np.fromstring(res_depth[80:], dtype=np.float32, count=-1, sep='')
+        # Remove this header: "\x93NUMPY\x01\x00F\x00{'descr': '<f4', 'fortran_order': False, 'shape': (480, 640), }      \n"
         res_depth = np.fromstring(res_depth[80:], dtype=np.float32, count=-1, sep='')
         # res_depth 
         # Publish data
@@ -321,7 +343,10 @@ class UnrealRosClient:
             client.request("vget /uecvros/full" + "".join([" {0:f}".format(x) for x in goal]) + " -1.0 " +
                            str(self.camera_id))
         else:
+            # Apparently only cam0 can be moved
             client.request("vset /camera/{0:d}/pose {1:f} {2:f} {3:f} {4:f} {5:f} {6:f}".format(self.camera_id, *goal))
+            # Trying to make sure that we use the fusion camera
+            # client.request("vset /camera/{0:d}/pose {1:f} {2:f} {3:f} {4:f} {5:f} {6:f}".format(1, *goal))
         return [True, ""]
 
     def on_collision(self):
